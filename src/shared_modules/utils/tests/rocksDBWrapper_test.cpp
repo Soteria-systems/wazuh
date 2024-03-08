@@ -10,8 +10,6 @@
  */
 
 #include "rocksDBWrapper_test.hpp"
-#include <iostream>
-#include <thread>
 
 /**
  * @brief Tests the put function

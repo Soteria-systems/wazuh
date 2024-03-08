@@ -114,6 +114,7 @@ namespace Utils
          */
         void destroyColumnFamilyHandles()
         {
+            // Destroy each column family handle.
             std::for_each(m_columnsHandles.begin(),
                           m_columnsHandles.end(),
                           [this](rocksdb::ColumnFamilyHandle* handle)
@@ -127,6 +128,7 @@ namespace Utils
                               }
                           });
 
+            // Clear the list of column family handles.
             m_columnsHandles.clear();
         }
 
