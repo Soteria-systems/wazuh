@@ -10,6 +10,8 @@
  */
 
 #include "rocksDBWrapper_test.hpp"
+#include <iostream>
+#include <thread>
 
 /**
  * @brief Tests the put function
@@ -184,8 +186,46 @@ TEST_F(RocksDBWrapperTest, TestDeleteAll)
     db_wrapper->put("key7", "value7");
     EXPECT_NO_THROW(db_wrapper->deleteAll());
     std::string value {};
-    EXPECT_FALSE(db_wrapper->get("key6", value)); // The key should have been deleted
-    EXPECT_FALSE(db_wrapper->get("key7", value)); // The key should have been deleted
+    EXPECT_FALSE(db_wrapper->columnExists(rocksdb::kDefaultColumnFamilyName));
+    EXPECT_FALSE(db_wrapper->get("key6", value));
+    EXPECT_FALSE(db_wrapper->get("key7", value));
+}
+
+/**
+ * @brief Tests the deleteAll over the column family
+ */
+TEST_F(RocksDBWrapperTest, TestDeleteAllOverColumnFamily)
+{
+    db_wrapper->createColumn("column_A");
+    db_wrapper->put("key6", "value6", "column_A");
+    db_wrapper->put("key7", "value7", "column_A");
+    EXPECT_NO_THROW(db_wrapper->deleteAll());
+    std::string value {};
+    EXPECT_FALSE(db_wrapper->columnExists("column_A"));
+    EXPECT_THROW(db_wrapper->get("key6", value, "column_A"), std::runtime_error);
+    EXPECT_THROW(db_wrapper->get("key7", value, "column_A"), std::runtime_error);
+}
+
+/**
+ * @brief Tests the deleteAll function with a callback
+ */
+TEST_F(RocksDBWrapperTest, DeleteAllWithCallback)
+{
+    std::function<void(std::string&, std::string&)> callback = [](std::string& key, std::string& value)
+    {
+        EXPECT_TRUE(key == "key6" && value == "value6" || key == "key7" && value == "value7");
+    };
+
+    db_wrapper->createColumn("column_A");
+    db_wrapper->put("key6", "value6", "column_A");
+    db_wrapper->put("key7", "value7", "column_A");
+
+    ASSERT_NO_THROW(db_wrapper->deleteAll(callback));
+
+    std::string value {};
+    EXPECT_FALSE(db_wrapper->columnExists("column_A"));
+    EXPECT_THROW(db_wrapper->get("key6", value, "column_A"), std::runtime_error);
+    EXPECT_THROW(db_wrapper->get("key7", value, "column_A"), std::runtime_error);
 }
 
 /**
